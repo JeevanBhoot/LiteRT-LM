@@ -1,3 +1,17 @@
+# Copyright 2026 The ODML Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 name: Fork wheels
 
 on:
@@ -20,12 +34,6 @@ jobs:
           - runner: ubuntu-24.04-arm
             platform: linux_arm64
             config: --config=linux_arm64
-          - runner: macos-latest
-            platform: macos_arm64
-            config: --config=macos_arm64
-          - runner: windows-2022
-            platform: windows_x86_64
-            config: ""
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 180
     defaults:
@@ -50,7 +58,7 @@ jobs:
         run: |
           # Desktop builds must not discover the runner's unrelated Android NDK.
           unset ANDROID_NDK_HOME
-          bazel build --config=public_cache --jobs=2 --deleted_packages=swift \
+          bazel build --config=public_cache --jobs=4 --deleted_packages=swift \
             --define=litert_runtime_link_mode=dynamic \
             --define=wheel_platform=${{ matrix.platform }} \
             ${{ matrix.config }} //python/litert_lm:wheel
@@ -58,10 +66,7 @@ jobs:
         env:
           LLVM_PROFILE_FILE: ${{ runner.temp }}/llvm-%p.profraw
         run: |
-          python -m pip install wheel==0.48.0
-          if [[ "$RUNNER_OS" == "Linux" ]]; then
-            python -m pip install auditwheel==6.8.2 patchelf==0.19.1.0
-          fi
+          python -m pip install wheel==0.48.0 auditwheel==6.8.2 patchelf==0.19.1.0
           python .github/scripts/fork_wheel.py
       - uses: actions/upload-artifact@v4
         with:
