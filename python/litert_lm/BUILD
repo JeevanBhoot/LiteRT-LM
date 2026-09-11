@@ -234,6 +234,7 @@ _PREBUILT_LIBS = [
     "libLiteRtWebGpuAccelerator",
     "libLiteRtTopKWebGpuSampler",
     "libLiteRt",
+    "libwebgpu_dawn",
 ]
 
 genrule(
