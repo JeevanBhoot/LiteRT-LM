@@ -31,8 +31,6 @@ jobs:
     defaults:
       run:
         shell: bash
-    env:
-      LLVM_PROFILE_FILE: ${{ runner.temp }}/llvm-%p.profraw
     steps:
       - uses: actions/checkout@v4
       - name: Fetch platform libraries
@@ -54,6 +52,8 @@ jobs:
             --define=wheel_platform=${{ matrix.platform }} \
             ${{ matrix.config }} //python/litert_lm:wheel
       - name: Package and verify installed wheel
+        env:
+          LLVM_PROFILE_FILE: ${{ runner.temp }}/llvm-%p.profraw
         run: |
           python -m pip install wheel==0.48.0
           if [[ "$RUNNER_OS" == "Linux" ]]; then
