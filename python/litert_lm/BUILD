@@ -481,6 +481,7 @@ py_wheel(
     python_requires = ">=3.10",
     summary = "LiteRT-LM inference library",
     license = "Apache-2.0",
+    extra_distinfo_files = {"//:LICENSE": "licenses/LICENSE"},
     description_file = "README.md",
     homepage = "https://github.com/google-ai-edge/LiteRT-LM",
     classifiers = [

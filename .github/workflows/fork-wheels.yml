@@ -1,0 +1,67 @@
+name: Fork wheels
+
+on:
+  push:
+    branches: [fork-release]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux_x86_64
+            config: ""
+          - runner: ubuntu-24.04-arm
+            platform: linux_arm64
+            config: --config=linux_arm64
+          - runner: macos-14
+            platform: macos_arm64
+            config: --config=macos_arm64
+          - runner: windows-2022
+            platform: windows_x86_64
+            config: ""
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 180
+    defaults:
+      run:
+        shell: bash
+    env:
+      LLVM_PROFILE_FILE: ${{ runner.temp }}/llvm-%p.profraw
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch platform libraries
+        run: |
+          git lfs install --local
+          git -c lfs.url=https://github.com/google-ai-edge/LiteRT-LM.git/info/lfs \
+            lfs pull --include='prebuilt/${{ matrix.platform }}/*'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-cache: true
+          repository-cache: true
+      - name: Build
+        run: |
+          bazel build --config=public_cache --jobs=2 --deleted_packages=swift \
+            --define=litert_runtime_link_mode=dynamic \
+            --define=wheel_platform=${{ matrix.platform }} \
+            ${{ matrix.config }} //python/litert_lm:wheel
+      - name: Package and verify installed wheel
+        run: |
+          python -m pip install wheel==0.48.0
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            python -m pip install auditwheel==6.8.2 patchelf==0.19.1.0
+          fi
+          python .github/scripts/fork_wheel.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel-${{ matrix.platform }}
+          path: dist/*
+          if-no-files-found: error
