@@ -20,7 +20,7 @@ jobs:
           - runner: ubuntu-24.04-arm
             platform: linux_arm64
             config: --config=linux_arm64
-          - runner: macos-14
+          - runner: macos-latest
             platform: macos_arm64
             config: --config=macos_arm64
           - runner: windows-2022
@@ -45,8 +45,11 @@ jobs:
         with:
           bazelisk-cache: true
           repository-cache: true
+          disk-cache: fork-wheels
       - name: Build
         run: |
+          # Desktop builds must not discover the runner's unrelated Android NDK.
+          unset ANDROID_NDK_HOME
           bazel build --config=public_cache --jobs=2 --deleted_packages=swift \
             --define=litert_runtime_link_mode=dynamic \
             --define=wheel_platform=${{ matrix.platform }} \
